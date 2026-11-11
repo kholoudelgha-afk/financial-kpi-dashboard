@@ -42,3 +42,25 @@ The dataset is simulated for portfolio and learning purposes. Do not present it 
 ## Suggested portfolio description
 **Financial Performance Dashboard | Python, Streamlit, Pandas, Plotly**
 Designed an interactive financial dashboard to monitor revenue, budget variances, gross margin and operating expenses across multiple regions and establishments. Added monthly trend analysis, drill-down filters and management insights to support performance monitoring and decision-making.
+
+
+## Version 2 — presentation polish
+- Corrected the operating-expense variance colour: an expense overrun is now shown as unfavourable.
+- Added a clear variance convention note.
+- Refined the visual theme with a consistent finance palette.
+- Updated management commentary to label operating expense variances as favourable/unfavourable.
+
+### Update an already deployed app
+Upload the updated `app.py` and the `.streamlit/config.toml` file to the root of your GitHub repository (create the `.streamlit` folder first if needed). Keep the dataset and `requirements.txt` unchanged. Streamlit Cloud will automatically redeploy after the GitHub commit.
+
+
+## Version 3 — profitability and executive insights
+- Added gross margin analysis by region.
+- Added establishment profitability ranking, including gross profit, gross margin and simplified operating result.
+- Added dynamic executive highlights and management actions based on the selected filters.
+- Added a comparison of highest- and lowest-margin performers to guide further investigation.
+
+## Portfolio summary
+**Financial Performance & Profitability Dashboard | Python, Streamlit, Pandas, Plotly**
+
+Built an interactive management reporting dashboard to monitor revenue performance, budget variances, gross margin and operating expenses across a multi-site business. Developed regional and establishment-level profitability analysis, performance rankings and management recommendations to support financial decision-making. Used a simulated dataset for confidentiality and portfolio purposes.

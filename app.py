@@ -272,20 +272,131 @@ st.dataframe(
     use_container_width=True, hide_index=True
 )
 
+
+# ---------- Profitability analysis ----------
+st.markdown("---")
+st.markdown("### 5. Profitability analysis")
+st.markdown(
+    '<div class="section-caption">Gross margin is calculated as revenue less cost of sales, divided by revenue. '
+    'Figures are weighted by revenue at each reporting level.</div>',
+    unsafe_allow_html=True,
+)
+
+profitability_data = (
+    filtered.groupby("Region", as_index=False)
+    .agg(
+        Revenue=("Revenue_Actual", "sum"),
+        Cost_of_Sales=("Cost_of_Sales_Actual", "sum"),
+        Operating_Expenses=("Operating_Expenses_Actual", "sum"),
+    )
+)
+profitability_data["Gross Profit"] = profitability_data["Revenue"] - profitability_data["Cost_of_Sales"]
+profitability_data["Gross Margin %"] = (
+    profitability_data["Gross Profit"] / profitability_data["Revenue"].replace(0, pd.NA)
+)
+profitability_data = profitability_data.sort_values("Gross Margin %", ascending=False)
+
+p_left, p_right = st.columns([1.15, 1])
+with p_left:
+    fig_margin_region = px.bar(
+        profitability_data.sort_values("Gross Margin %"),
+        x="Gross Margin %", y="Region", orientation="h",
+        text=profitability_data.sort_values("Gross Margin %")["Gross Margin %"].map(lambda x: f"{x:.1%}"),
+        labels={"Gross Margin %": "Gross margin", "Region": ""},
+        color="Gross Margin %",
+        color_continuous_scale=["#D97757", "#E7B45B", "#176B87"],
+    )
+    fig_margin_region.update_layout(
+        template="plotly_white", height=350, margin=dict(l=5, r=15, t=15, b=5),
+        coloraxis_showscale=False, xaxis=dict(tickformat=".0%", range=[0, max(.01, float(profitability_data["Gross Margin %"].max()) * 1.15)]),
+    )
+    st.plotly_chart(fig_margin_region, use_container_width=True)
+with p_right:
+    best_region = profitability_data.iloc[0]
+    weakest_region = profitability_data.iloc[-1]
+    st.metric("Highest regional gross margin", f"{best_region['Gross Margin %']:.1%}", str(best_region["Region"]))
+    st.metric("Lowest regional gross margin", f"{weakest_region['Gross Margin %']:.1%}", str(weakest_region["Region"]))
+    st.metric("Gross profit across selected scope", eur(profitability_data["Gross Profit"].sum()))
+
+est_profit = (
+    filtered.groupby(["Region", "Establishment"], as_index=False)
+    .agg(
+        Revenue=("Revenue_Actual", "sum"),
+        Cost_of_Sales=("Cost_of_Sales_Actual", "sum"),
+        Operating_Expenses=("Operating_Expenses_Actual", "sum"),
+    )
+)
+est_profit["Gross Profit"] = est_profit["Revenue"] - est_profit["Cost_of_Sales"]
+est_profit["Gross Margin %"] = (
+    est_profit["Gross Profit"] / est_profit["Revenue"].replace(0, pd.NA)
+)
+est_profit["Simplified Operating Result"] = est_profit["Gross Profit"] - est_profit["Operating_Expenses"]
+est_profit = est_profit.sort_values("Gross Margin %", ascending=False)
+
+st.markdown("#### Establishment profitability ranking")
+st.dataframe(
+    est_profit.rename(columns={
+        "Revenue": "Revenue actual",
+        "Gross Profit": "Gross profit",
+        "Gross Margin %": "Gross margin %",
+        "Simplified Operating Result": "Simplified operating result",
+    })[["Region", "Establishment", "Revenue actual", "Gross profit",
+        "Gross margin %", "Simplified operating result"]].style.format({
+            "Revenue actual": "€{:,.0f}",
+            "Gross profit": "€{:,.0f}",
+            "Gross margin %": "{:.1%}",
+            "Simplified operating result": "€{:,.0f}",
+        }),
+    use_container_width=True, hide_index=True
+)
+
+if len(est_profit) >= 2:
+    best_est = est_profit.iloc[0]
+    weakest_est = est_profit.iloc[-1]
+    st.caption(
+        f"Highest gross margin: {best_est['Establishment']} ({best_est['Region']}, "
+        f"{best_est['Gross Margin %']:.1%}) · Lowest gross margin: "
+        f"{weakest_est['Establishment']} ({weakest_est['Region']}, {weakest_est['Gross Margin %']:.1%})."
+    )
+
+
 # ---------- Management insights ----------
-st.markdown("### 5. Management takeaways")
-if revenue_var > 0:
-    st.write(f"• Revenue is **{eur(revenue_var)} above budget** ({pct(revenue_var_pct)}). Identify the regions and establishments contributing most to this favourable variance.")
-else:
-    st.write(f"• Revenue is **{eur(abs(revenue_var))} below budget** ({pct(abs(revenue_var_pct))}). Review volume, pricing and sales mix by region.")
-if gross_margin < 0.35:
-    st.write(f"• Gross margin is **{pct(gross_margin)}**. Review purchasing costs, selling prices and product mix.")
-else:
-    st.write(f"• Gross margin stands at **{pct(gross_margin)}**. Monitor whether this level is sustainable across regions and months.")
-if opex_var > 0:
-    st.write(f"• Operating expenses are **{eur(opex_var)} above budget (unfavourable)**; investigate the main cost drivers.")
-else:
-    st.write(f"• Operating expenses are **{eur(abs(opex_var))} below budget (favourable)**, indicating cost discipline.")
+st.markdown("### 6. Management takeaways")
+st.markdown(
+    '<div class="section-caption">A concise interpretation of the selected reporting scope, with suggested areas for management review.</div>',
+    unsafe_allow_html=True,
+)
+
+revenue_variance_by_region = regional[["Region", "Revenue variance"]].sort_values("Revenue variance")
+lowest_revenue_region = revenue_variance_by_region.iloc[0]
+highest_revenue_region = revenue_variance_by_region.iloc[-1]
+opex_variance_pct = opex_var / opex_budget if opex_budget else 0
+
+insight_col1, insight_col2 = st.columns(2)
+with insight_col1:
+    st.markdown("**Performance highlights**")
+    if revenue_var >= 0:
+        st.write(f"• Revenue is **{eur(revenue_var)} above budget** ({pct(revenue_var_pct)}), indicating an overall favourable sales performance.")
+    else:
+        st.write(f"• Revenue is **{eur(abs(revenue_var))} below budget** ({pct(abs(revenue_var_pct))}), indicating a shortfall against plan.")
+    st.write(
+        f"• Regional revenue variance ranges from **{eur(lowest_revenue_region['Revenue variance'])}** "
+        f"({lowest_revenue_region['Region']}) to **{eur(highest_revenue_region['Revenue variance'])}** "
+        f"({highest_revenue_region['Region']})."
+    )
+    st.write(f"• Gross margin is **{pct(gross_margin)}**, equivalent to **{eur(gross_profit)} gross profit**.")
+with insight_col2:
+    st.markdown("**Management actions to consider**")
+    if opex_var > 0:
+        st.write(f"• Review the **{eur(opex_var)} unfavourable operating expense variance** by cost category, region and establishment; distinguish one-off items from recurring overspend.")
+    else:
+        st.write(f"• Operating expenses are **{eur(abs(opex_var))} below budget**. Validate that savings are sustainable and do not affect service levels.")
+    if "est_profit" in locals() and len(est_profit) >= 2:
+        st.write(
+            f"• Compare the cost of sales, pricing and product mix of **{est_profit.iloc[0]['Establishment']}** "
+            f"and **{est_profit.iloc[-1]['Establishment']}** to understand the gross-margin gap."
+        )
+    st.write("• Prioritise follow-up on establishments with below-average gross margin or an unfavourable revenue variance.")
 
 with st.expander("KPI definitions and methodology"):
     st.markdown("""
