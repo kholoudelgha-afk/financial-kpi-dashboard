@@ -14,20 +14,32 @@ st.set_page_config(
 # ---------- Styling ----------
 st.markdown("""
 <style>
-    .stApp { background: #F5F7FB; }
-    [data-testid="stSidebar"] { background: #101C35; }
-    [data-testid="stSidebar"] * { color: #F4F7FC !important; }
-    .main-title { font-size: 2rem; font-weight: 750; color: #14213D; margin-bottom: 0; }
-    .subtitle { color: #64748B; margin-top: .2rem; margin-bottom: 1.2rem; }
-    [data-testid="stMetric"] {
-        background: white; padding: 16px 18px; border-radius: 12px;
-        border: 1px solid #E5EAF2; box-shadow: 0 2px 8px rgba(15,23,42,.04);
+    .stApp { background: #F3F6FA; }
+    [data-testid="stSidebar"] { background: #14243D; }
+    [data-testid="stSidebar"] * { color: #F5F7FB !important; }
+    [data-testid="stSidebar"] [data-baseweb="tag"] {
+        background-color: #176B87 !important;
+        border: 0 !important;
     }
-    [data-testid="stMetricLabel"] { color: #64748B; }
-    [data-testid="stMetricValue"] { color: #14213D; }
-    div[data-testid="stDataFrame"] { background: white; }
-    .note { background: #EAF1FB; padding: 10px 14px; border-radius: 8px;
-            color: #334155; font-size: .9rem; }
+    [data-testid="stSidebar"] [data-baseweb="tag"] * { color: white !important; }
+    .main-title { font-size: 2.15rem; font-weight: 780; color: #14243D; letter-spacing: -.6px; }
+    .subtitle { color: #66758A; margin-top: .15rem; margin-bottom: 1.1rem; font-size: 1rem; }
+    [data-testid="stMetric"] {
+        background: #FFFFFF; padding: 17px 18px; border-radius: 13px;
+        border: 1px solid #E1E8F0; box-shadow: 0 3px 10px rgba(20,36,61,.045);
+        min-height: 116px;
+    }
+    [data-testid="stMetricLabel"] { color: #64748B; font-weight: 600; }
+    [data-testid="stMetricValue"] { color: #14243D; }
+    [data-testid="stMetricDelta"] { font-size: .82rem; }
+    h2, h3 { color: #14243D; }
+    div[data-testid="stDataFrame"] { background: white; border-radius: 12px; }
+    .note {
+        background: #E8F0F8; border-left: 4px solid #176B87;
+        padding: 12px 15px; border-radius: 8px; color: #334155; font-size: .9rem;
+    }
+    .section-caption { color: #64748B; font-size: .88rem; margin-top: -8px; }
+    hr { border-color: #DCE4EE; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -118,9 +130,11 @@ c4.metric("Simplified operating result", eur(simplified_result), f"{pct(simplifi
 
 c5, c6, c7, c8 = st.columns(4)
 c5.metric("Revenue prior year", eur(revenue_py))
-c6.metric("Operating expenses", eur(opex_actual), f"{opex_var:+,.0f} € vs budget")
+c6.metric("Operating expenses", eur(opex_actual), f"{opex_var:+,.0f} € vs budget", delta_color="inverse")
 c7.metric("Cost of sales", eur(cost_actual))
 c8.metric("Operating expenses / revenue", pct(opex_actual/revenue_actual if revenue_actual else 0))
+
+st.caption("Variance convention: positive revenue variance is favourable; positive expense variance is unfavourable.")
 
 # ---------- Monthly performance ----------
 st.markdown("---")
@@ -269,9 +283,9 @@ if gross_margin < 0.35:
 else:
     st.write(f"• Gross margin stands at **{pct(gross_margin)}**. Monitor whether this level is sustainable across regions and months.")
 if opex_var > 0:
-    st.write(f"• Operating expenses are **{eur(opex_var)} above budget**; investigate the main cost drivers.")
+    st.write(f"• Operating expenses are **{eur(opex_var)} above budget (unfavourable)**; investigate the main cost drivers.")
 else:
-    st.write(f"• Operating expenses are **{eur(abs(opex_var))} below budget**, indicating a favourable cost variance.")
+    st.write(f"• Operating expenses are **{eur(abs(opex_var))} below budget (favourable)**, indicating cost discipline.")
 
 with st.expander("KPI definitions and methodology"):
     st.markdown("""
